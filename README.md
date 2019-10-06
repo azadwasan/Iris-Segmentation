@@ -21,8 +21,8 @@ Human iris can be using for uniquely identifying a certain person, similar to fi
   * Minor version : 1
   * For details installation instructions, please follow https://linuxize.com/post/how-to-install-opencv-on-ubuntu-18-04/
 * MMU Eyes Database Version 1.0
- * The current implementation has been tuned to work with MMU database. However, the code is generic enough to be easily adapted to other databases easily.
- * This database is no longer available, however, a copy of the database has been included with the repository here.
+  * The current implementation has been tuned to work with MMU database. However, the code is generic enough to be easily adapted to other databases easily.
+  * This database is no longer available, however, a copy of the database has been included with the repository here.
 ## Basic Build Instructions
 
 1. Clone this repo.
