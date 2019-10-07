@@ -15,6 +15,11 @@ class CIrisSegmentation{
 public:
     //TODO: Apply rule of 5
     CIrisSegmentation(std::string imageLocation);
+    CIrisSegmentation(const CIrisSegmentation& other);              //Copy constructor
+    CIrisSegmentation(const CIrisSegmentation&& other);             //Move constructor
+    CIrisSegmentation& operator=(const CIrisSegmentation& other);
+    CIrisSegmentation& operator=(const CIrisSegmentation&& other);
+
     ~CIrisSegmentation(){}  //Nothing to do here, as we use the member variables that don't require explicit cleanup.
     bool PerformSegmentation();
 
@@ -42,6 +47,7 @@ private:
     void drawCircleToPoint();
     std::string type2str(int type) ;
 
+    void copyOtherObject(const CIrisSegmentation& other);
 private:
     const std::string m_templateLocation{"../misc/pupilmmu2.bmp"};
     //Private members

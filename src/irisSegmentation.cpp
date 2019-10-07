@@ -15,6 +15,29 @@ CIrisSegmentation::CIrisSegmentation(std::string imageLocation):m_imageLocation{
     cout << "Subminor version : " << CV_SUBMINOR_VERSION << endl;
 }
 
+CIrisSegmentation::CIrisSegmentation(const CIrisSegmentation& other){
+    copyOtherObject(other);
+}
+
+CIrisSegmentation::CIrisSegmentation(const CIrisSegmentation&& other){
+    copyOtherObject(other);
+}
+
+CIrisSegmentation& CIrisSegmentation::operator=(const CIrisSegmentation& other){
+    copyOtherObject(other);
+    return *this;
+}
+
+CIrisSegmentation& CIrisSegmentation::operator=(const CIrisSegmentation&& other){
+    copyOtherObject(other);
+    return *this;
+}
+
+void CIrisSegmentation::copyOtherObject(const CIrisSegmentation& other){
+    m_imageLocation = other.m_imageLocation;
+    other.eye_image.copyTo(eye_image);  //Simple assignment only copies the matrix header, hence we explicitly copy the matrix.
+}
+
 bool CIrisSegmentation::PerformSegmentation(){
     if(!eye_image.data){
         cout<<"Eye image invalid, returing"<<endl;
@@ -79,7 +102,7 @@ CMaxLocation CIrisSegmentation::detectPupil(const Mat& edged_image, const Point&
     CMaxLocation maxLoc{};
     for(double radius = std::get<0>(PUPIL_RANGE);radius<=std::get<1>(PUPIL_RANGE);radius++){
         CMaxLocation newMaxLoc = fcht(edged_pupil_image, newCenter, radius, ParseArea::Pupil);
-        if(newMaxLoc.getMaxValue()>maxLoc.getMaxValue()){
+        if(newMaxLoc>maxLoc){
             maxLoc = newMaxLoc;
         }
     }  
