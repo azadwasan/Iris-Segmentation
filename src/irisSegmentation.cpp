@@ -1,4 +1,5 @@
 #include "../header/irisSegmentation.h"
+#include <exception>
 #include <iostream>
 
 using namespace std;
@@ -8,7 +9,9 @@ const double pi = 3.1415;
 
 CIrisSegmentation::CIrisSegmentation(std::string imageLocation):m_imageLocation{imageLocation}{
     eye_image = imread( imageLocation, 1);
-
+    if(!eye_image.data){
+        throw std::runtime_error("Failed to load the image");
+    }
     cout << "OpenCV version : " << CV_VERSION << endl;
     cout << "Major version : " << CV_MAJOR_VERSION << endl;
     cout << "Minor version : " << CV_MINOR_VERSION << endl;
@@ -127,7 +130,7 @@ Point CIrisSegmentation::correlateTemplate(){
     Mat pupil_template;
     pupil_template = imread(m_templateLocation, 1);
     if(!pupil_template.data){
-        //TODO: Raise exception
+        throw runtime_error("Failed to load a pupil template image.");
     }
 
     Mat  corr_result;

@@ -13,7 +13,6 @@ class MaxLocation;
 
 class CIrisSegmentation{
 public:
-    //TODO: Apply rule of 5
     CIrisSegmentation(std::string imageLocation);
     CIrisSegmentation(const CIrisSegmentation& other);              //Copy constructor
     CIrisSegmentation(const CIrisSegmentation&& other);             //Move constructor
