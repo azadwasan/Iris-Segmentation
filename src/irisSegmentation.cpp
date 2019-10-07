@@ -13,7 +13,6 @@ CIrisSegmentation::CIrisSegmentation(std::string imageLocation):m_imageLocation{
     cout << "Major version : " << CV_MAJOR_VERSION << endl;
     cout << "Minor version : " << CV_MINOR_VERSION << endl;
     cout << "Subminor version : " << CV_SUBMINOR_VERSION << endl;
-
 }
 
 bool CIrisSegmentation::PerformSegmentation(){
@@ -27,16 +26,16 @@ bool CIrisSegmentation::PerformSegmentation(){
     // imshow( "edged image", edged_image);
 
     CMaxLocation maxLocPupil = detectPupil(edged_image, roughCenter);
-    cout << "Best fit found for pupil = maxValue = "<< maxLocPupil.max_value<<", radius = "<<maxLocPupil.radius<<", (x, y)="<<maxLocPupil.location.x<<", "<<maxLocPupil.location.y<<endl;
+    cout << "Best fit found for pupil = maxValue = "<< maxLocPupil.getMaxValue()<<", radius = "<<maxLocPupil.getRadius()<<", (x, y)="<<maxLocPupil.getLocation().x<<", "<<maxLocPupil.getLocation().y<<endl;
  
-    CMaxLocation maxLocIris = detectIris(edged_image, maxLocPupil.location);
-    cout << "Best fit found for iris = maxValue = "<< maxLocIris.max_value<<", radius = "<<maxLocIris.radius<<", (x, y)="<<maxLocIris.location.x<<", "<<maxLocIris.location.y<<endl;
+    CMaxLocation maxLocIris = detectIris(edged_image, maxLocPupil.getLocation());
+    cout << "Best fit found for iris = maxValue = "<< maxLocIris.getMaxValue()<<", radius = "<<maxLocIris.getRadius()<<", (x, y)="<<maxLocIris.getLocation().x<<", "<<maxLocIris.getLocation().y<<endl;
 
-    circle(eye_image, maxLocPupil.location, maxLocPupil.radius, Scalar::all(255), 1, 8, 0);
-    circle(eye_image, maxLocIris.location, maxLocIris.radius, Scalar::all(255), 1, 8, 0);
+    circle(eye_image, maxLocPupil.getLocation(), maxLocPupil.getRadius(), Scalar::all(255), 1, 8, 0);
+    circle(eye_image, maxLocIris.getLocation(), maxLocIris.getRadius(), Scalar::all(255), 1, 8, 0);
 
-    circle(edged_image, maxLocPupil.location, maxLocPupil.radius, Scalar::all(255), 1, 8, 0);
-    circle(edged_image, maxLocIris.location, maxLocIris.radius, Scalar::all(255), 1, 8, 0);
+    circle(edged_image, maxLocPupil.getLocation(), maxLocPupil.getRadius(), Scalar::all(255), 1, 8, 0);
+    circle(edged_image, maxLocIris.getLocation(), maxLocIris.getRadius(), Scalar::all(255), 1, 8, 0);
 
     imshow("Iris detected edged image ", edged_image);
     imshow("Iris detected image ", eye_image);
@@ -49,7 +48,7 @@ bool CIrisSegmentation::PerformSegmentation(){
     return true;
 }
 
-CMaxLocation CIrisSegmentation::detectPupil(Mat& edged_image, Point& center){
+CMaxLocation CIrisSegmentation::detectPupil(const Mat& edged_image, const Point& center){
 
     int colStart = center.x - PUPIL_AREA_SPAN;
     if(colStart<0)
@@ -80,7 +79,7 @@ CMaxLocation CIrisSegmentation::detectPupil(Mat& edged_image, Point& center){
     CMaxLocation maxLoc{};
     for(double radius = std::get<0>(PUPIL_RANGE);radius<=std::get<1>(PUPIL_RANGE);radius++){
         CMaxLocation newMaxLoc = fcht(edged_pupil_image, newCenter, radius, ParseArea::Pupil);
-        if(newMaxLoc.max_value>maxLoc.max_value){
+        if(newMaxLoc.getMaxValue()>maxLoc.getMaxValue()){
             maxLoc = newMaxLoc;
         }
     }  
@@ -90,11 +89,11 @@ CMaxLocation CIrisSegmentation::detectPupil(Mat& edged_image, Point& center){
     return maxLoc;   
 }
 
-CMaxLocation CIrisSegmentation::detectIris(Mat& edged_image, Point& center){
+CMaxLocation CIrisSegmentation::detectIris(const Mat& edged_image, Point center){
     CMaxLocation maxLoc{};
     for(double radius = std::get<0>(IRIS_RANGE);radius<=std::get<1>(IRIS_RANGE);radius++){
         CMaxLocation newMaxLoc = fcht(edged_image, center, radius, ParseArea::Iris);
-        if(newMaxLoc.max_value>maxLoc.max_value){
+        if(newMaxLoc.getMaxValue()>maxLoc.getMaxValue()){
             maxLoc = newMaxLoc;
         }
     }  
@@ -176,7 +175,7 @@ Mat CIrisSegmentation::detectEdges(){
     return edged_image;
 }
 
-CMaxLocation CIrisSegmentation::fcht(Mat& edged_image, Point& center, double radius, ParseArea area){     //Fast circular hough transform
+CMaxLocation CIrisSegmentation::fcht(const Mat& edged_image, const Point& center, double radius, ParseArea area){     //Fast circular hough transform
     Mat fchtResult=Mat::zeros(edged_image.size(), CV_32F);
     Mat origCopy;
     edged_image.copyTo(origCopy);
@@ -225,11 +224,6 @@ void CIrisSegmentation::processPixel(Mat& result, Mat& imgCopy, Point currentPoi
     double pointAngle=atan(abs(double(dy)/double(dx)))*180/pi;      //Compute the angle to the point from the center and convert to degrees for easier looping
     pointAngle = adjustAngle(dy, dx, pointAngle);
 
-    // cout<<"center (x, y) = (" << center.x <<  ", " << center.y<<")"
-    //     <<", currentPoint (x, y) = (" << currentPoint.x << ", " << currentPoint.y<<")"
-    //     <<", radius = " << radius
-    //     <<", angle = " << pointAngle <<endl;
-
     computeSemiCircle(result, imgCopy, pointAngle, currentPoint, radius);
 }
 
@@ -250,22 +244,16 @@ void CIrisSegmentation::computeSemiCircle(Mat& result, Mat& imgCopy, double poin
 double CIrisSegmentation::adjustAngle(double dy, double dx, double angle){
     if(dy>0){
         if(dx<0){
-            // pointAngle=180-pointAngle;
-            angle=90+angle;
-            // cout<<"Point lies in bottom-left quadrant, adjusting the angle to "<<angle<<endl;
+            angle=90+angle; //or alternatively pointAngle=180-pointAngle;
         }
     }
     else if(dy<0){
         if(dx<0){
             angle=180+angle;
-            // cout<<"Point lies in bottom-right quadrant, adjusting the angle to "<<angle<<endl;
         }
         else
         {
-            // angle=360-angle;
-            // angle=270+angle;
-            angle=angle - 90;
-            // cout<<"Point lies in top-right quadrant, adjusting the angle to "<<angle<<endl;
+            angle=angle - 90; //or alternatively angle=360-angle;// angle=270+angle;
         }
     }
     else if(dy==0){
@@ -282,7 +270,6 @@ double CIrisSegmentation::adjustAngle(double dy, double dx, double angle){
 void CIrisSegmentation::extractIris(Mat& result, const CMaxLocation& iris, const CMaxLocation& pupil){
     double angularresolution=1;
     double radialresolution=60;
-    // cv::Mat A = cv::Mat(int rows, int cols, int type);
     Mat irisMat(radialresolution, ceil(360/angularresolution), eye_image.type());
 
     irisMat.copyTo(result);
@@ -315,11 +302,6 @@ void CIrisSegmentation::extractIris(Mat& result, const CMaxLocation& iris, const
             <<", to location ("<<result_x <<", " <<result_y<<")";
 
 
-            if(eye_image_x < eye_image.size().width && eye_image_y < eye_image.size().height){
-            }
-            // else{
-            //     cout<<"***** Invalid eye_image coordinate ***** ";
-            // }
             if(result_x < result.size().width && result_y < result.size().height){
                 // irisMat.at<uchar>(result_x,result_y)=eye_image.at<uchar>(eye_image_x, eye_image_y);
                 eye_copy.at<uchar>(eye_image_x, eye_image_y) = 0;
@@ -331,58 +313,29 @@ void CIrisSegmentation::extractIris(Mat& result, const CMaxLocation& iris, const
                 << "result_x =" << result_x << ", width =" << result.size().width << ", result_y=" << result_y << ", height= " <<result.size().height;
             }
             cout<<endl;
-            // waitKey(0);
         }
     }
     cout<<"*** YUHU, iris extraction completed successfully ***" << endl;
-    // imshow("final result", irisMat);
-    waitKey(0);
-
 }
 
-// function normal=normalize(im,rp,ri,px,py,ix,iy)
-
-// angularresolution=1;
-// radialresolution=60;
-// % im2=rgb2gray(im);
-// normal=zeros(radialresolution,ceil(360/angularresolution));
-
-// rho=0;
-// for p=0:1/radialresolution:1
-//     rho=rho+1;
-//     for theta=90:angularresolution:450
-//         angle=theta*pi/180;
-//         pupilx=px+rp*cos(angle);
-//         pupily=py+rp*sin(angle);
-//         irisx=ix+ri*cos(angle);
-//         irisy=iy+ri*sin(angle);
-//         x=ceil((1-p)*pupilx+p*irisx);
-//         y=ceil((1-p)*pupily+p*irisy);
-//         normal(rho,floor((theta+1-90)/angularresolution))=im(x,y);
-//     end
-// end
-
+// The following code has been taken from https://stackoverflow.com/questions/10167534/how-to-find-out-what-type-of-a-mat-object-is-with-mattype-in-opencv
 string CIrisSegmentation::type2str(int type) {
-  string r;
-
-  uchar depth = type & CV_MAT_DEPTH_MASK;
-  uchar chans = 1 + (type >> CV_CN_SHIFT);
-
-  switch ( depth ) {
-    case CV_8U:  r = "8U"; break;
-    case CV_8S:  r = "8S"; break;
-    case CV_16U: r = "16U"; break;
-    case CV_16S: r = "16S"; break;
-    case CV_32S: r = "32S"; break;
-    case CV_32F: r = "32F"; break;
-    case CV_64F: r = "64F"; break;
-    default:     r = "User"; break;
-  }
-
-  r += "C";
-  r += (chans+'0');
-
-  return r;
+    string r;
+    uchar depth = type & CV_MAT_DEPTH_MASK;
+    uchar chans = 1 + (type >> CV_CN_SHIFT);
+    switch ( depth ) {
+        case CV_8U:  r = "8U"; break;
+        case CV_8S:  r = "8S"; break;
+        case CV_16U: r = "16U"; break;
+        case CV_16S: r = "16S"; break;
+        case CV_32S: r = "32S"; break;
+        case CV_32F: r = "32F"; break;
+        case CV_64F: r = "64F"; break;
+        default:     r = "User"; break;
+    }
+    r += "C";
+    r += (chans+'0');
+    return r;
 }
 
 void CIrisSegmentation::drawCircle(Mat& circleImage, Point center, int radius){
@@ -424,7 +377,6 @@ void CIrisSegmentation::drawCircleToPoint(){
 
     circleImage.at<float>(pointInSpace.y, pointInSpace.x) = 0;
 
-
     int dx=center.x-pointInSpace.x;
     int dy=center.y-pointInSpace.y;
     double pointAngle=atan(abs(double(dy)/double(dx)))*180/pi;
@@ -432,7 +384,6 @@ void CIrisSegmentation::drawCircleToPoint(){
 
     if(dy>0){
         if(dx<0){
-            // pointAngle=180-pointAngle;
             pointAngle=90+pointAngle;
             cout<<"Point lies in bottom-left quadrant, adjusting the angle to "<<pointAngle<<endl;
         }
@@ -444,8 +395,6 @@ void CIrisSegmentation::drawCircleToPoint(){
         }
         else
         {
-            // pointAngle=360-pointAngle;
-            // pointAngle=270+pointAngle;
             pointAngle=pointAngle - 90;
             cout<<"Point lies in top-right quadrant, adjusting the angle to "<<pointAngle<<endl;
         }
@@ -471,7 +420,6 @@ void CIrisSegmentation::drawCircleToPoint(){
     imshow( "Semi circle", circleImage );
 }
 
-
 // https://stackoverflow.com/questions/14028193/size-of-matrix-opencv
 // Note that apart from rows and columns there is a number of channels and type. When it is clear what type is, the channels can act as an extra dimension as in CV_8UC3 so you would address a matrix as
 // uchar a = M.at<Vec3b>(y, x)[i];
@@ -479,6 +427,8 @@ void CIrisSegmentation::drawCircleToPoint(){
 
 // https://answers.opencv.org/question/96739/returning-a-mat-from-a-function/
 
+// cv::Mat A = cv::Mat(int rows, int cols, int type);
+ 
 
 // int val = input[edged_image.cols * row + col ] ;
 

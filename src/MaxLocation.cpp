@@ -19,3 +19,7 @@ void CMaxLocation::setLocation(const Point& loc){
 double CMaxLocation::getRadius() const{
     return radius;
 }
+
+double CMaxLocation::getMaxValue() const{
+    return max_value;
+}
