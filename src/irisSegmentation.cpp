@@ -95,8 +95,6 @@ CMaxLocation CIrisSegmentation::detectPupil(const Mat& edged_image, const Point&
     Mat edged_pupil_image;
     edged_image(Rect(colStart,rowStart, colEnd - colStart, rowEnd - rowStart)).copyTo(edged_pupil_image);   //NOTE: To be investigated: if we don't clone it, the fcht results are really wierd
 
-    // imshow("Pupil Subimage", edged_pupil_image);
-
     cout<<"Original, size, width = " << edged_image.size().width <<", height = " << edged_image.size().height
         <<", original center (x, y) = (" << center.x << ", " << center.y <<")"
         <<"Pupil subimage, size, width = " << edged_pupil_image.size().width <<", height = " << edged_pupil_image.size().height
@@ -151,20 +149,19 @@ Point CIrisSegmentation::correlateTemplate(){
     // Normalize the result
     normalize( corr_result, corr_result, 0, 1, NORM_MINMAX, -1, Mat() );
 
-  /// Localizing the best match with minMaxLoc
-  double minVal; double maxVal; Point minLoc; Point maxLoc;
-  Point matchLoc;
+    /// Localizing the best match with minMaxLoc
+    double minVal; double maxVal; Point minLoc; Point maxLoc;
+    Point matchLoc;
 
-  minMaxLoc( corr_result, &minVal, &maxVal, &minLoc, &maxLoc);
+    minMaxLoc( corr_result, &minVal, &maxVal, &minLoc, &maxLoc);
 
     matchLoc = minLoc;
 
-//   void rectangle(Mat& img, Point pt1, Point pt2, const Scalar& color, int thickness=1, int lineType=8, int shift=0)¶
-  rectangle( img_display, matchLoc, Point( matchLoc.x + pupil_template.cols , matchLoc.y + pupil_template.rows ), Scalar::all(0), 2, 8, 0 );
-  rectangle( corr_result, matchLoc, Point( matchLoc.x + pupil_template.cols , matchLoc.y + pupil_template.rows ), Scalar::all(0), 2, 8, 0 );
+    rectangle( img_display, matchLoc, Point( matchLoc.x + pupil_template.cols , matchLoc.y + pupil_template.rows ), Scalar::all(0), 2, 8, 0 );
+    rectangle( corr_result, matchLoc, Point( matchLoc.x + pupil_template.cols , matchLoc.y + pupil_template.rows ), Scalar::all(0), 2, 8, 0 );
 
-  Point matchCenter{matchLoc.x + int(pupil_template.cols/2), matchLoc.y + int(pupil_template.rows/2)};
-  circle(img_display, matchCenter, 15, Scalar::all(255), 4, 8, 0);
+    Point matchCenter{matchLoc.x + int(pupil_template.cols/2), matchLoc.y + int(pupil_template.rows/2)};
+    circle(img_display, matchCenter, 15, Scalar::all(255), 4, 8, 0);
 
     const char* image_window = "Source Image";
     const char* result_window = "Result window";
@@ -177,7 +174,6 @@ Point CIrisSegmentation::correlateTemplate(){
 
     cout<<"Original Image width = " << img_display.cols <<", original Image height = " << img_display.rows << endl
         <<"result Image width = " << corr_result.cols <<", original Image height = " << corr_result.rows << endl;
-
 
     return matchCenter;
 }
@@ -195,8 +191,6 @@ Mat CIrisSegmentation::detectEdges(){
 
     blur( eye_image_gray, edged_image, Size(7,7) );
     Canny( edged_image, edged_image, lowThreshold, lowThreshold*ratio, kernel_size );
-
-    // drawCircle(edged_image, center, radius);
 
     return edged_image;
 }
@@ -218,25 +212,9 @@ CMaxLocation CIrisSegmentation::fcht(const Mat& edged_image, const Point& center
         }
     }
 
-    // if(area == ParseArea::Pupil){
-    //     for(int col = 0;col < edged_image.size().width;col++){
-    //         for(int row = 0;row < edged_image.size().height;row++){
-    //             int val = input[edged_image.cols * row + col ] ;
-    //             if(val==255){   //If the pixel if part of an edge (i.e., set/white)
-    //                 processPixel(fchtResult, origCopy, Point{col, row}, center, radius);
-    //             }
-    //         }
-    //     }
-    // }
-    // else if( area == ParseArea::Iris){
-    //     //TODO: Implement the iris optimized search (if the point if outside the pupil box, process it, otherwise don't)
-    // }
-
-  //  blur( fchtResult, fchtResult, Size(5,5) );
     double minVal; double maxVal; Point minLoc; Point maxLoc;
     minMaxLoc( fchtResult, &minVal, &maxVal, &minLoc, &maxLoc);
 
-    // imshow("Result ", fchtResult);
 
     normalize( fchtResult, fchtResult, 0, 1, NORM_MINMAX, -1, Mat() );
     imshow("Normalized fcht result ", fchtResult);
@@ -445,25 +423,3 @@ void CIrisSegmentation::drawCircleToPoint(){
     }
     imshow( "Semi circle", circleImage );
 }
-
-// https://stackoverflow.com/questions/14028193/size-of-matrix-opencv
-// Note that apart from rows and columns there is a number of channels and type. When it is clear what type is, the channels can act as an extra dimension as in CV_8UC3 so you would address a matrix as
-// uchar a = M.at<Vec3b>(y, x)[i];
-
-
-// https://answers.opencv.org/question/96739/returning-a-mat-from-a-function/
-
-// cv::Mat A = cv::Mat(int rows, int cols, int type);
- 
-
-// int val = input[edged_image.cols * row + col ] ;
-
-// _Tp& cv::Mat::at (int row, int col) 
-
-    // If matrix is of type CV_8U then use Mat.at<uchar>(y,x).
-    // If matrix is of type CV_8S then use Mat.at<schar>(y,x).
-    // If matrix is of type CV_16U then use Mat.at<ushort>(y,x).
-    // If matrix is of type CV_16S then use Mat.at<short>(y,x).
-    // If matrix is of type CV_32S then use Mat.at<int>(y,x).
-    // If matrix is of type CV_32F then use Mat.at<float>(y,x).
-    // If matrix is of type CV_64F then use Mat.at<double>(y,x).
