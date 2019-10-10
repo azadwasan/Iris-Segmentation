@@ -28,4 +28,31 @@ Human iris can be using for uniquely identifying a certain person, similar to fi
 1. Clone this repo.
 2. Make a build directory in the top level directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
-4. Run it: `./irisSegmentation MMU_Data_path/EyeImage.bmp`.
+4. Run it: `./IrisSegmentation MMU_Data_path/EyeImage.bmp`.
+   e.g., ./IrisRecognition ../database/MMU/1/left/aeval1.bmp 
+After the processing has been completed a final image with two circles will be displaying encircling the pupil and the iris. In most cases both iris and pupil are correctly detected. However, there are still cases where the detection does not succeed to detect one or the both the circles correctly due to poor lighting conditions.
+
+## Brief code description
+
+High level code structure:
+ main.cpp  ->  main
+ irisSegmentation.h/irisSegmentation.cpp
+   This is the main class containing the whole logic regarding iris segmentation. 
+   Brief description of the interface:
+        Point correlateTemplate();
+           Correlate the eye image with a predefined eye template. This gives a rough prelimnary estimate about where the pupil lies roughly in the image.
+        Mat detectEdges();
+            Produces an edge detected image, used to detect the pupil and the iris.
+        CMaxLocation detectPupil(const Mat& edged_image, const Point& center);
+            Uses edge detected image to detect the circle fitting the pupil using Circular hogh transform (CHT)
+        CMaxLocation detectIris(const Mat& edged_image, Point center);
+            Uses edge detected image to detect the circle fitting the iris using Circular hogh transform (CHT)
+        CMaxLocation fcht(const Mat& edged_image, const Point& center, double radius, ParseArea area);
+            My own improvement over the standard CHT to an imrpoved Fast Circular Hough Transform (FCHT). It improves the search through reducing the searching spacing by searching aroung the rough center detected by correlateTemplate() function. 
+
+Exact details regarding the above mechanisms are provided in Chapter 2 of the thesis under https://github.com/sooperNoob/Iris-Segmentation/blob/master/docu/Iris_Recognition_Thesis.pdf.
+
+## Futue Extensions
+1. The current detection algorithm can easily be extended to support multi-threaded proessing. The functions CIrisSegmentation::detectPupil() and CIrisSegmentation::detectIris() can be modified to accept the range of radius they are suppsoed to look for and each range can be processed in a seperate thread.
+2. Currently, the whole image is searched to detect the iris circle. This can be improved by searching in a circular pattern around the already detected pupil circle. 
+3. Extract features from the segmentated pupil and store them into a database to support iris recognition.
