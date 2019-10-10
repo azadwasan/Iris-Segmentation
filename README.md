@@ -29,16 +29,22 @@ Human iris can be using for uniquely identifying a certain person, similar to fi
 2. Make a build directory in the top level directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./IrisSegmentation MMU_Data_path/EyeImage.bmp`.
-   e.g., ./IrisRecognition ../database/MMU/1/left/aeval1.bmp 
+   e.g., ./IrisRecognition ../database/MMU/1/left/aeval1.bmp
+   
 After the processing has been completed a final image with two circles will be displaying encircling the pupil and the iris. In most cases both iris and pupil are correctly detected. However, there are still cases where the detection does not succeed to detect one or the both the circles correctly due to poor lighting conditions.
 
 ## Brief code description
 
 High level code structure:
+
  main.cpp  ->  main
+
  irisSegmentation.h/irisSegmentation.cpp
-   This is the main class containing the whole logic regarding iris segmentation. 
+
+ This is the main class containing the whole logic regarding iris segmentation. 
+ 
    Brief description of the interface:
+   
         Point correlateTemplate();
            Correlate the eye image with a predefined eye template. This gives a rough prelimnary estimate about where the pupil lies roughly in the image.
         Mat detectEdges();
