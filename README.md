@@ -46,13 +46,18 @@ High level code structure:
    Brief description of the interface:
    
         Point correlateTemplate();
+        
            Correlate the eye image with a predefined eye template. This gives a rough prelimnary estimate about where the pupil lies roughly in the image.
+           
         Mat detectEdges();
             Produces an edge detected image, used to detect the pupil and the iris.
+            
         CMaxLocation detectPupil(const Mat& edged_image, const Point& center);
             Uses edge detected image to detect the circle fitting the pupil using Circular hogh transform (CHT)
+            
         CMaxLocation detectIris(const Mat& edged_image, Point center);
             Uses edge detected image to detect the circle fitting the iris using Circular hogh transform (CHT)
+            
         CMaxLocation fcht(const Mat& edged_image, const Point& center, double radius, ParseArea area);
             My own improvement over the standard CHT to an imrpoved Fast Circular Hough Transform (FCHT). It improves the search through reducing the searching spacing by searching aroung the rough center detected by correlateTemplate() function. 
 
