@@ -5,6 +5,7 @@
 #include "../header/irisSegmentation.h"
 #include <string>
 #include <utility>
+#include <mutex>
 
 using namespace cv;
 
@@ -34,7 +35,8 @@ private:
     Point correlateTemplate();
     Mat detectEdges();
     CMaxLocation detectPupil(const Mat& edged_image, const Point& center);
-    CMaxLocation detectIris(const Mat& edged_image, Point center);
+    void distributeIrisDetectionWork(const Mat& edged_image, Point center);
+    void detectIris(const Mat& edged_image, Point center, std::pair<int, int> iris_range);
     CMaxLocation fcht(const Mat& edged_image, const Point& center, double radius, ParseArea area);
 
     void processPixel(Mat& result, Mat& imgCopy, Point currentPoint, const Point& center, double radius);
@@ -52,6 +54,9 @@ private:
     //Private members
     std::string m_imageLocation;
     Mat eye_image;
+
+    CMaxLocation iris_location;
+    std::mutex iris_mutex;
 
     const std::pair<int, int> PUPIL_RANGE{20, 32};  //Range of radius that the pupil generally lies in 
     const std::pair<int, int> IRIS_RANGE{45, 70};   //Range of radius that the iris generally lies in

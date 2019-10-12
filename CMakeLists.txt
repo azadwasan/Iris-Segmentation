@@ -14,4 +14,4 @@ add_executable(IrisRecognition
      src/irisSegmentation.cpp
      src/MaxLocation.cpp)
 
-target_link_libraries( IrisRecognition ${OpenCV_LIBS} )
+target_link_libraries( IrisRecognition ${OpenCV_LIBS} pthread)

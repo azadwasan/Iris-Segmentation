@@ -1,6 +1,7 @@
 #include "../header/irisSegmentation.h"
 #include <exception>
 #include <iostream>
+#include <future>
 
 using namespace std;
 using namespace cv; 
@@ -54,7 +55,9 @@ bool CIrisSegmentation::PerformSegmentation(){
     CMaxLocation maxLocPupil = detectPupil(edged_image, roughCenter);
     cout << "Best fit found for pupil = maxValue = "<< maxLocPupil.getMaxValue()<<", radius = "<<maxLocPupil.getRadius()<<", (x, y)="<<maxLocPupil.getLocation().x<<", "<<maxLocPupil.getLocation().y<<endl;
  
-    CMaxLocation maxLocIris = detectIris(edged_image, maxLocPupil.getLocation());
+    
+    distributeIrisDetectionWork(edged_image, maxLocPupil.getLocation());
+    CMaxLocation maxLocIris = iris_location;
     cout << "Best fit found for iris = maxValue = "<< maxLocIris.getMaxValue()<<", radius = "<<maxLocIris.getRadius()<<", (x, y)="<<maxLocIris.getLocation().x<<", "<<maxLocIris.getLocation().y<<endl;
 
     circle(eye_image, maxLocPupil.getLocation(), maxLocPupil.getRadius(), Scalar::all(255), 1, 8, 0);
@@ -113,15 +116,45 @@ CMaxLocation CIrisSegmentation::detectPupil(const Mat& edged_image, const Point&
     return maxLoc;   
 }
 
-CMaxLocation CIrisSegmentation::detectIris(const Mat& edged_image, Point center){
-    CMaxLocation maxLoc{};
-    for(double radius = std::get<0>(IRIS_RANGE);radius<=std::get<1>(IRIS_RANGE);radius++){
+void CIrisSegmentation::distributeIrisDetectionWork(const Mat& edged_image, Point center){
+    const int worker_thread_count = 3;
+
+    cout<<"***** Initiating multi-threaded iris detection ******" <<endl<<endl;
+
+    int range_start = std::get<0>(IRIS_RANGE);
+    int thread_range = ceil(double(std::get<1>(IRIS_RANGE) - std::get<0>(IRIS_RANGE))/worker_thread_count);
+    std::vector<std::future<void>> futures;
+    for (int i = 0; i < worker_thread_count; ++i)  
+    {  
+        futures.emplace_back(std::async(std::launch::async, &CIrisSegmentation::detectIris, this, edged_image, center, std::pair<int, int>{range_start, range_start+thread_range>std::get<1>(IRIS_RANGE)?std::get<1>(IRIS_RANGE):range_start+thread_range}));  
+        range_start += thread_range;
+    }
+    
+    // wait for the results  
+    std::for_each(futures.begin(), futures.end(), [](std::future<void> &ftr) {  
+        ftr.wait();  
+    });  
+    cout<<endl<<"**** Multi-threaded Iris detection completed **** "<<endl;
+}
+
+void CIrisSegmentation::detectIris(const Mat& edged_image, Point center, std::pair<int, int> iris_range){
+    bool msgPrinted = false;
+    for(double radius = std::get<0>(iris_range);radius<=std::get<1>(iris_range);radius++){
         CMaxLocation newMaxLoc = fcht(edged_image, center, radius, ParseArea::Iris);
-        if(newMaxLoc.getMaxValue()>maxLoc.getMaxValue()){
-            maxLoc = newMaxLoc;
+        //Only mutex protect the iris_location as this is the only data member that is modified by various threads
+        //Rest of the data is only read by the thread, which is fine to access without any mutex protection.
+        //This allows the code to truly run in parallel, otherwise the whole fcht() function will be mutex protected, which will
+        //effectively make all the threads run serially one after the other.
+        std::lock_guard<std::mutex> lck(iris_mutex);  
+        //We print the following message after locing the mutex, because otherwise, the console output can be mixed by various threads.
+        if(!msgPrinted){
+            cout<<"Thread id = " << std::this_thread::get_id() <<", range =("<<std::get<0>(iris_range)<<", "<<std::get<1>(iris_range)<<")"<<endl;
+            msgPrinted = true;
+        }
+        if(newMaxLoc.getMaxValue()>iris_location.getMaxValue()){
+            iris_location = newMaxLoc;
         }
     }  
-    return maxLoc;
 }
 
 Point CIrisSegmentation::correlateTemplate(){
@@ -201,7 +234,6 @@ CMaxLocation CIrisSegmentation::fcht(const Mat& edged_image, const Point& center
     edged_image.copyTo(origCopy);
 
     unsigned char *input = (unsigned char*)(edged_image.data);
-    imshow("Received pupil image", edged_image);
 
     for(int col = 0;col < edged_image.size().width;col++){
         for(int row = 0;row < edged_image.size().height;row++){
@@ -214,7 +246,6 @@ CMaxLocation CIrisSegmentation::fcht(const Mat& edged_image, const Point& center
 
     double minVal; double maxVal; Point minLoc; Point maxLoc;
     minMaxLoc( fchtResult, &minVal, &maxVal, &minLoc, &maxLoc);
-
 
     normalize( fchtResult, fchtResult, 0, 1, NORM_MINMAX, -1, Mat() );
     imshow("Normalized fcht result ", fchtResult);
