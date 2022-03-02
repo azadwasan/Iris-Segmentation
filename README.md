@@ -1,6 +1,4 @@
-# CPPND: Capstone Iris Segmentation using OpenCV
-
-This is a Iris segmentation repo for fulfillment of the Capstone project in the [Udacity C++ Nanodegree Program](https://www.udacity.com/course/c-plus-plus-nanodegree--nd213).
+# CPPND: Iris Segmentation using OpenCV
 
 Human iris can be using for uniquely identifying a certain person, similar to fingerprints. Iris is the region between pupil and the sclera (white area). It is made of various muscles that contract and relax to allow the appropriate amount of light into the eye through pupil. These muscles form patterns that are unique to each person.
 
